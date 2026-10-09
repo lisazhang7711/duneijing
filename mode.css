@@ -1,0 +1,94 @@
+/* ============================================================
+   mode.css · 读内经 — 手机版 / 电脑版 适配层
+   手机版 = 横屏排版：目录与助手改为侧滑抽屉 + 遮罩
+   电脑版 = 原三栏常驻，不做改动
+   ============================================================ */
+
+/* ---------- 入口选择页 ---------- */
+#mgate{
+  position:fixed;inset:0;z-index:200;background:var(--paper);
+  display:flex;align-items:center;justify-content:center;padding:26px;overflow:auto;
+}
+#mgate[hidden]{display:none}
+.mg-box{width:100%;max-width:660px;text-align:center}
+.mg-t{font-size:21px;font-weight:700;letter-spacing:3px;color:var(--ink)}
+.mg-s{font-size:13px;color:var(--ink3);margin-top:8px;line-height:1.9;font-family:var(--sans)}
+.mg-cards{display:flex;gap:14px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+.mg-card{
+  flex:1 1 230px;max-width:290px;background:var(--paper2);border:1px solid var(--line2);
+  border-radius:12px;padding:20px 16px 18px;cursor:pointer;font-family:var(--sans);color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  transition:border-color .16s,box-shadow .16s;
+}
+.mg-card:hover{border-color:var(--zhu);box-shadow:0 6px 20px rgba(60,45,20,.18)}
+.mg-card svg{color:var(--ink3)}
+.mg-card:hover svg{color:var(--zhu)}
+.mg-card b{font-size:16px;letter-spacing:2px;font-weight:700}
+.mg-card i{font-style:normal;font-size:12px;color:var(--ink3);line-height:1.8}
+.mg-rec{
+  font-style:normal;font-size:11px;letter-spacing:1px;color:#fff;
+  background:var(--zhu);border-radius:10px;padding:1px 10px;
+}
+.mg-rec[hidden]{display:none}
+.mg-foot{margin-top:20px;font-size:11.5px;color:var(--ink3);line-height:1.85;font-family:var(--sans)}
+
+/* ---------- 竖屏提示：仅手机版 + 触摸设备 ---------- */
+#mrotate{
+  position:fixed;inset:0;z-index:150;background:var(--paper);
+  display:none;align-items:center;justify-content:center;text-align:center;padding:28px;
+}
+@media screen and (orientation:portrait){
+  html.mode-mobile.mtouch.mready #mrotate{display:flex}
+}
+.mr-in{max-width:330px;color:var(--ink)}
+.mr-ico svg{color:var(--ink3);animation:mrrot 2.6s ease-in-out infinite}
+@keyframes mrrot{0%,40%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+.mr-t{font-size:19px;letter-spacing:2px;margin-top:14px;font-weight:700}
+.mr-s{font-size:13px;color:var(--ink3);line-height:1.95;margin-top:8px;font-family:var(--sans)}
+.mr-btn{
+  margin-top:18px;border:1px solid var(--line2);border-radius:4px;background:transparent;
+  font-family:var(--sans);font-size:13px;color:var(--ink2);cursor:pointer;padding:7px 18px;
+}
+.mr-btn:hover{border-color:var(--zhu);color:var(--zhu)}
+
+/* ---------- 手机版：顶栏 / 页脚压缩 ---------- */
+/* 顶栏必须压过遮罩，否则抽屉一开就点不到顶栏按钮 */
+html.mode-mobile #topbar{padding:0 10px;gap:6px;z-index:67}
+html.mode-mobile #topbar .tool-btn,
+html.mode-mobile #topbar .navbtn{padding:4px 8px;font-size:11.5px}
+html.mode-mobile #q{width:118px;flex:0 0 auto}
+html.mode-mobile #wrap{height:calc(100vh - var(--mh,52px) - 22px)}
+html.mode-mobile footer{height:22px;line-height:22px;font-size:10px}
+html.mode-mobile footer span:last-child{display:none}
+html.mode-mobile #main .inner{padding:18px 22px 0}
+
+/* ---------- 手机版：目录 / 助手 → 侧滑抽屉 ---------- */
+html.mode-mobile #toc{
+  display:block!important;
+  position:fixed;left:0;top:var(--mh,52px);bottom:22px;
+  width:min(268px,44vw);z-index:66;transform:translateX(-104%);
+  transition:transform .22s ease;box-shadow:6px 0 22px rgba(60,45,20,.22);
+  border-right:1px solid var(--line);
+}
+html.mode-mobile.m-toc #toc{transform:none}
+
+html.mode-mobile #aside{
+  display:block!important;
+  position:fixed;right:0;top:var(--mh,52px);bottom:22px;
+  width:min(330px,52vw);z-index:66;transform:translateX(104%);
+  transition:transform .22s ease;box-shadow:-6px 0 22px rgba(60,45,20,.22);
+  border-left:1px solid var(--line);
+}
+html.mode-mobile.m-aside #aside{transform:none}
+
+html.mode-mobile #toc-handle{top:38%;z-index:64}
+
+/* 遮罩：点空白处收起抽屉 */
+/* 遮罩只盖内容区，不盖顶栏 */
+#mscrim{
+  position:fixed;left:0;right:0;bottom:0;top:var(--mh,52px);z-index:65;
+  background:rgba(43,43,40,.42);display:none;
+}
+#mscrim.on{display:block}
+
+#modeSwitch{flex:0 0 auto}
