@@ -747,7 +747,11 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
     root.classList.add("mready");
     closeAll();
     const sw = $("modeSwitch");
-    if (sw) { sw.textContent = (MODE_NAME[m] || "选择版本"); sw.title = "点击重新选择版本"; }
+    if (sw) {
+      const other = (m === "desktop" ? "mp" : "desktop");
+      sw.textContent = MODE_NAME[other];
+      sw.title = "切换到" + MODE_NAME[other];
+    }
 
     const tocBtn = $("btn-toc"), handle = $("toc-handle"), asideBtn = $("btn-aside"), asideClose = $("aside-close");
     if (m !== "desktop") {
@@ -796,7 +800,10 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
     const b = document.createElement("button");
     b.className = "tool-btn";
     b.id = "modeSwitch";
-    b.onclick = openGate;
+    b.onclick = function () {
+      const next = (cur() === "desktop" ? "mp" : "desktop");
+      save(next); apply(next);
+    };
     bar.appendChild(b);
   }
 
@@ -2860,7 +2867,7 @@ window.NJ_OLDCHARTS = {
 
   const SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEXTAREA: 1 };
   /* 版本选择界面固定简体：#mgate 首选项，不随全站字形切换 */
-  const MODE_UI = "#mgate";
+  const MODE_UI = "#mgate, #modeSwitch";
   function inModeUI(node) {
     let el = null;
     if (node.nodeType === 1) el = node;
