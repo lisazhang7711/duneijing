@@ -629,8 +629,22 @@ html.mode-mobile.m-ai #aside{transform:none!important}
 html.mode-mobile.m-landscape #topbar{height:46px}
 html.mode-mobile.m-landscape #toc{width:min(300px,34vw)}
 html.mode-mobile.m-landscape #aside{width:min(340px,40vw)}
-html.mode-mobile.m-landscape #main{padding:8px 10px 44px}
-html.mode-mobile.m-landscape #main .inner{max-width:none;padding:12px 14px 0}
+
+/* 横屏版：正文沿手机宽度方向展开，用横向分栏 + 横向滚动 */
+html.mode-mobile.m-landscape #wrap{height:calc(100vh - 46px - 26px);overflow:hidden}
+html.mode-mobile.m-landscape #main{
+  flex:1 1 auto;height:100%;overflow:hidden;padding:8px 0 0;
+  -webkit-overflow-scrolling:touch;
+}
+html.mode-mobile.m-landscape #main #inner{
+  height:100%;overflow-x:auto;overflow-y:hidden;
+  columns:320px;column-gap:24px;column-fill:auto;
+  padding:12px 14px 0;
+  scroll-snap-type:x proximity;
+}
+html.mode-mobile.m-landscape #main #inner > *{break-inside:avoid;scroll-snap-align:start}
+html.mode-mobile.m-landscape #main #inner > .sec{break-inside:avoid}
+html.mode-mobile.m-landscape #main #inner > .sec + .sec{margin-top:0}
 /* 竖屏版：顶栏可换行、抽屉接近满屏，按窄屏排版 */
 html.mode-mobile.m-portrait #topbar{
   height:auto;min-height:52px;padding:6px 10px;flex-wrap:wrap;row-gap:6px;
