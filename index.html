@@ -2860,6 +2860,14 @@ window.NJ_OLDCHARTS = {
   } catch (e) {}
 
   const SKIP = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEXTAREA: 1 };
+  /* 版本选择界面固定简体：#mgate 首选项 + #mrotate 竖屏提示，不随全站字形切换 */
+  const MODE_UI = "#mgate, #mrotate";
+  function inModeUI(node) {
+    let el = null;
+    if (node.nodeType === 1) el = node;
+    else if (node.parentNode && node.parentNode.nodeType === 1) el = node.parentNode;
+    return !!(el && el.closest && el.closest(MODE_UI));
+  }
   const orig = new WeakMap();          // 文本节点 -> 原始文本（避免来回切换累积失真）
   const attrOrig = new WeakMap();      // 元素 -> { attr: 原始值 }
   let applying = false;
@@ -2872,6 +2880,7 @@ window.NJ_OLDCHARTS = {
   const ATTRS = ["placeholder", "title", "aria-label"];
   function convertAttrs(el) {
     if (!el || el.nodeType !== 1 || !el.hasAttribute) return;
+    if (inModeUI(el)) return;
     let cache = attrOrig.get(el);
     if (!cache) { cache = {}; attrOrig.set(el, cache); }
     ATTRS.forEach(a => {
@@ -2889,6 +2898,7 @@ window.NJ_OLDCHARTS = {
       const p = n.parentNode;
       if (!p || SKIP[p.nodeName]) continue;
       if (!n.nodeValue || !n.nodeValue.trim()) continue;
+      if (inModeUI(n)) continue;
       list.push(n);
     }
     list.forEach(convertNode);
@@ -2934,6 +2944,7 @@ window.NJ_OLDCHARTS = {
         muts.forEach(m => {
           if (m.type !== "childList") return;
           m.addedNodes.forEach(node => {
+            if (inModeUI(node)) return;
             if (node.nodeType === 1) { convertAttrs(node); walk(node); }
             else if (node.nodeType === 3) {
               const p = node.parentNode;
