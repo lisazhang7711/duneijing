@@ -625,11 +625,12 @@ html.mode-mobile #aside{
 }
 html.mode-mobile.m-ai #aside{transform:none!important}
 
-/* 横屏版：顶栏压矮、抽屉收窄，横向空间留给正文 */
+/* 横屏版：顶栏压矮、抽屉收窄，正文沿手机宽度方向展开 */
 html.mode-mobile.m-landscape #topbar{height:46px}
 html.mode-mobile.m-landscape #toc{width:min(300px,34vw)}
 html.mode-mobile.m-landscape #aside{width:min(340px,40vw)}
-html.mode-mobile.m-landscape #main{padding:14px 18px 44px}
+html.mode-mobile.m-landscape #main{padding:8px 10px 44px}
+html.mode-mobile.m-landscape #main .inner{max-width:none;padding:12px 14px 0}
 /* 竖屏版：顶栏可换行、抽屉接近满屏，按窄屏排版 */
 html.mode-mobile.m-portrait #topbar{
   height:auto;min-height:52px;padding:6px 10px;flex-wrap:wrap;row-gap:6px;
@@ -831,7 +832,10 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
       b.classList.toggle("cur", b.getAttribute("data-m") === now);
     });
     const c = $("mgCancel");
-    if (c) c.hidden = !now;
+    if (c) {
+      c.hidden = !now;
+      c.textContent = now ? "继续" + MODE_NAME[now] : "暂不选择";
+    }
     gate.hidden = false;
   }
 
@@ -861,9 +865,9 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
     if (m) {
       apply(m);
     } else {
-      openGate();
       const sw = $("modeSwitch"); if (sw) sw.textContent = "选择版本";
     }
+    openGate();
 
     Array.prototype.forEach.call(gate.querySelectorAll(".mg-card"), function (b) {
       b.onclick = function () {
@@ -3015,37 +3019,6 @@ window.NJ_OLDCHARTS = {
   window.NJSetScript = setScript;
 })();
 
-</script>
-<script>
-(function(){
-  var B = '__STATS_BACKEND__';
-  var S = 'duneijing';
-  var K = 'st_vid';
-  var vid = '';
-  try {
-    vid = localStorage.getItem(K) || '';
-    if (!vid) {
-      vid = (crypto && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-      localStorage.setItem(K, vid);
-    }
-  } catch (e) { vid = ''; }
-  if (!vid) return;
-  var t0 = Date.now(), done = false;
-  function send(extra) {
-    try {
-      var u = B + '/hit?site=' + S + '&vid=' + encodeURIComponent(vid) + (extra || '');
-      if (navigator.sendBeacon) navigator.sendBeacon(u);
-      else fetch(u, { mode: 'no-cors', keepalive: true }).catch(function(){});
-    } catch (e) {}
-  }
-  function leave() { if (done) return; done = true; send('&dwell=' + Math.round((Date.now() - t0) / 1000)); }
-  send('');
-  addEventListener('pagehide', leave);
-  addEventListener('beforeunload', leave);
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') leave(); });
-})();
 </script>
 </body>
 </html>
