@@ -2065,8 +2065,9 @@ window.NJ_OLDCHARTS = {
     wrap.appendChild(el("div", "ch-sub", `${c.titleTw}　${bs.zhu} · 本篇 ${bs.ben}`));
     wrap.appendChild(el("div", "ch-brief", c.brief));
     wrap.appendChild(el("div", "ch-tags", tagHtml(c.tags)));
-    // 图文互鉴：原本放在小助手面板里的三张图示入口，改到正文里
-    wrap.appendChild(el("div", "tzwj", tzwjHtml(c)));
+    // 图文互鉴：原本放在小助手面板里的图示入口，改到正文里（按本篇内容定位）
+    const tzwj = tzwjHtml(c);
+    if (tzwj) wrap.appendChild(el("div", "tzwj", tzwj));
 
     c.sections.forEach((s, i) => {
       const sec = el("div", "sec");
@@ -2140,27 +2141,69 @@ window.NJ_OLDCHARTS = {
       <div style="margin-top:16px">${tagHtml(c.tags)}</div>`;
   }
 
-  /* 图文互鉴：按本篇内容定位到对应的图示；本篇没有对应项时给出通用入口 */
-  function tzwjHtml(c) {
+  /* ---------- 图文互鉴：本篇 → 本篇真正讲到的那张图 ----------
+     显式标记（段上的 mer / off / manip）最优先，其余按正文关键词命中，
+     命中不到就不显示该按钮——不做「所有篇都跳同一张图」的兜底。 */
+  const NJ_VIZ_KEYS = {
+    mer: NJ_MERIDIANS.map(m => ({
+      id: m.id, name: m.short || m.full, sub: m.full,
+      keys: [m.full, m.short, m.limb + m.yinyang, m.yinyang + m.limb]
+    })),
+    off: NJ_OFFICIALS.map(o => ({
+      id: o.name, name: o.name, sub: o.rank,
+      keys: [o.rank, o.name + "者", o.name + "主", o.name + "藏", o.name + "气", o.name]
+    })),
+    manip: NJ_MANIP.map(x => ({
+      id: x.id, name: x.name + "法", sub: x.sub,
+      keys: [x.name + "之", x.name + "而", x.name + "其", x.sub, x.name + "法"]
+    }))
+  };
+
+  function vizHits(c) {
     const secs = c.sections || [];
-    const pick = k => (secs.find(s => s[k]) || {})[k];
-    const mer = pick("mer") || "";
-    const off = (pick("off") || [])[0] || "";
-    const man = pick("manip") || "";
-    const mName = (NJ_MERIDIANS.find(x => x.id === mer) || {}).short || "";
-    const mmName = (NJ_MANIP.find(x => x.id === man) || {}).name || "";
-    const items = [
-      { act: "mer", arg: mer || NJ_MERIDIANS[0].id, label: "人体经络图",
-        sub: mName ? "本篇 · " + mName : "十二经脉循行" },
-      { act: "off", arg: off || "心", label: "十二官关系图",
-        sub: off ? "本篇 · " + off : "十二藏之相使" },
-      { act: "manip", arg: man || "an", label: "按压手法演示",
-        sub: mmName ? "本篇 · " + mmName : "按法六手" }
-    ];
-    return `<div class="tzwj-h"><span class="tzwj-ic">◍</span>图文互鉴<i>对照图示读原文</i></div>
-      <div class="tzwj-b">${items.map(it =>
-        `<button class="tzwj-bt" data-act="${it.act}" data-arg="${it.arg}"><b>${it.label}</b><em>${it.sub}</em></button>`
-      ).join("")}</div>`;
+    const hay = [c.title, c.titleTw, c.brief, (c.tags || []).join(" "),
+      secs.map(s => (s.yw || "") + " " + (s.bh || "")).join(" ")].join(" ");
+    const cnt = (v) => { let n = 0, i = hay.indexOf(v);
+      while (i >= 0) { n++; i = hay.indexOf(v, i + v.length); } return n; };
+    const explicit = { mer: [], off: [], manip: [] };
+    secs.forEach(s => {
+      if (s.mer) explicit.mer.push(s.mer);
+      if (s.off && s.off.length) explicit.off = explicit.off.concat(s.off);
+      if (s.manip) explicit.manip.push(s.manip);
+    });
+    const out = {};
+    ["mer", "off", "manip"].forEach(kind => {
+      out[kind] = NJ_VIZ_KEYS[kind].map(it => {
+        let sc = 0;
+        it.keys.forEach(k => {
+          if (!k) return;
+          [k, toTrad(k)].forEach(v => {
+            if (!v) return;
+            const n = cnt(v);
+            if (n) sc += n * (v.length >= 4 ? 14 : v.length === 3 ? 5 : v.length === 2 ? 2 : 0.4);
+          });
+        });
+        const ex = explicit[kind].indexOf(it.id);
+        if (ex >= 0) sc += 1000;
+        return { it: it, sc: sc, ex: ex < 0 ? 999 : ex };
+      }).filter(x => x.sc > 0)
+        .sort((a, b) => (a.ex - b.ex) || (b.sc - a.sc));   // 显式标记按文中先后，其余按相关度
+    });
+    return out;
+  }
+
+  function tzwjHtml(c) {
+    const h = vizHits(c);
+    const take = (kind, min, cap) => h[kind].filter(x => x.sc >= min).slice(0, cap);
+    const btn = (kind, id, name, sub) =>
+      `<button class="tzwj-bt" data-act="${kind}" data-arg="${id}"><b>${name}</b><em>${sub}</em></button>`;
+    const items = []
+      .concat(take("mer", 3, 3).map(x => btn("mer", x.it.id, x.it.name, "人体经络图 · " + x.it.sub)))
+      .concat(take("off", 3, 4).map(x => btn("off", x.it.id, x.it.name, "十二官 · " + x.it.sub)))
+      .concat(take("manip", 6, 2).map(x => btn("manip", x.it.id, x.it.name, "手法演示 · " + x.it.sub)));
+    if (!items.length) return "";
+    return `<div class="tzwj-h"><span class="tzwj-ic">◍</span>图文互鉴<i>本篇讲到的那几张图</i></div>
+      <div class="tzwj-b">${items.join("")}</div>`;
   }
 
   function setAside(html, title) {
@@ -2912,7 +2955,8 @@ window.NJ_OLDCHARTS = {
 
   /* ---------- 对外接口（顶栏按钮用） ---------- */
   window.NJAPI = {
-    openChapter, openMer, openOff, openManip, openWuxing, renderViz, exitViz, doSearch
+    openChapter, openMer, openOff, openManip, openWuxing, renderViz, exitViz, doSearch, vizHits,
+    chapters: NJ_CHAPTERS
   };
 
   /* ---------- 顶栏高亮 ---------- */
