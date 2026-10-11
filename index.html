@@ -273,6 +273,43 @@ body.w-nar  #main .inner{max-width:660px}
 .mini-btn.man{border-color:var(--green);color:var(--green);font-weight:600}
 .mini-btn.hi{background:var(--zhu);color:#fdf4dc;border-color:var(--zhu)}
 
+/* ---------- 图文互鉴（正文内的图示入口） ---------- */
+.tzwj{
+  margin:0 0 24px;border:1px solid var(--line2);border-radius:12px;
+  background:var(--paper2);overflow:hidden;
+}
+.tzwj-h{
+  display:flex;align-items:center;gap:8px;padding:9px 14px;
+  border-bottom:1px dashed var(--line2);background:var(--zhu-bg);
+  font-family:var(--sans);font-size:13px;font-weight:700;
+  letter-spacing:.14em;color:var(--zhu);
+}
+.tzwj-ic{font-size:13px;line-height:1}
+.tzwj-h i{
+  font-style:normal;margin-left:auto;font-weight:400;
+  font-size:11.5px;letter-spacing:.06em;color:var(--ink3);
+}
+.tzwj-b{display:flex;gap:10px;flex-wrap:wrap;padding:12px 14px}
+.tzwj-bt{
+  flex:1 1 170px;min-width:152px;cursor:pointer;text-align:left;
+  display:flex;flex-direction:column;gap:3px;padding:10px 12px;
+  border:1px solid var(--line2);border-radius:10px;background:var(--paper);
+  transition:border-color .15s,background .15s,transform .15s;
+}
+.tzwj-bt b{
+  font-family:var(--sans);font-size:13.5px;font-weight:700;
+  letter-spacing:.05em;color:var(--ink);
+}
+.tzwj-bt em{
+  font-style:normal;font-family:var(--sans);font-size:11.5px;
+  letter-spacing:.03em;color:var(--ink3);
+}
+.tzwj-bt:hover{
+  border-color:var(--zhu);background:var(--zhu-bg);transform:translateY(-1px);
+}
+.tzwj-bt:hover b{color:var(--zhu)}
+.tzwj-bt:hover em{color:var(--indigo)}
+
 .yw{
   font-size:var(--fs);line-height:2.05;letter-spacing:.045em;
   color:var(--ink);text-align:justify;
@@ -2028,6 +2065,8 @@ window.NJ_OLDCHARTS = {
     wrap.appendChild(el("div", "ch-sub", `${c.titleTw}　${bs.zhu} · 本篇 ${bs.ben}`));
     wrap.appendChild(el("div", "ch-brief", c.brief));
     wrap.appendChild(el("div", "ch-tags", tagHtml(c.tags)));
+    // 图文互鉴：原本放在小助手面板里的三张图示入口，改到正文里
+    wrap.appendChild(el("div", "tzwj", tzwjHtml(c)));
 
     c.sections.forEach((s, i) => {
       const sec = el("div", "sec");
@@ -2101,6 +2140,29 @@ window.NJ_OLDCHARTS = {
       <div style="margin-top:16px">${tagHtml(c.tags)}</div>`;
   }
 
+  /* 图文互鉴：按本篇内容定位到对应的图示；本篇没有对应项时给出通用入口 */
+  function tzwjHtml(c) {
+    const secs = c.sections || [];
+    const pick = k => (secs.find(s => s[k]) || {})[k];
+    const mer = pick("mer") || "";
+    const off = (pick("off") || [])[0] || "";
+    const man = pick("manip") || "";
+    const mName = (NJ_MERIDIANS.find(x => x.id === mer) || {}).short || "";
+    const mmName = (NJ_MANIP.find(x => x.id === man) || {}).name || "";
+    const items = [
+      { act: "mer", arg: mer || NJ_MERIDIANS[0].id, label: "人体经络图",
+        sub: mName ? "本篇 · " + mName : "十二经脉循行" },
+      { act: "off", arg: off || "心", label: "十二官关系图",
+        sub: off ? "本篇 · " + off : "十二藏之相使" },
+      { act: "manip", arg: man || "an", label: "按压手法演示",
+        sub: mmName ? "本篇 · " + mmName : "按法六手" }
+    ];
+    return `<div class="tzwj-h"><span class="tzwj-ic">◍</span>图文互鉴<i>对照图示读原文</i></div>
+      <div class="tzwj-b">${items.map(it =>
+        `<button class="tzwj-bt" data-act="${it.act}" data-arg="${it.arg}"><b>${it.label}</b><em>${it.sub}</em></button>`
+      ).join("")}</div>`;
+  }
+
   function setAside(html, title) {
     if (title) $("#aside-title").textContent = title;
     $("#aside-body").innerHTML = html;
@@ -2112,10 +2174,10 @@ window.NJ_OLDCHARTS = {
     if (t) { showTerm(t.dataset.t); return; }
     const l = e.target.closest("[data-act]");
     if (l) {
-      const a = l.dataset.act;
-      if (a === "mer") openMer(NJ_MERIDIANS[0].id);
-      if (a === "off") openOff("心");
-      if (a === "manip") openManip("an");
+      const a = l.dataset.act, arg = l.dataset.arg;
+      if (a === "mer") openMer(arg || NJ_MERIDIANS[0].id);
+      if (a === "off") openOff(arg || "心");
+      if (a === "manip") openManip(arg || "an");
       return;
     }
     const o = e.target.closest("[data-open]");
