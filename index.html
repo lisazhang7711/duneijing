@@ -51,6 +51,7 @@
 body.night{
   --paper:#12100a;
   --paper2:#1d1a12;
+  --paper-deep:#2b2414;
   --line:#3c3a30;
   --line2:#5c5943;
   --ink:#efe6cc;
@@ -144,6 +145,18 @@ button{font-family:inherit;cursor:pointer}
 }
 .tool-btn:hover{border-color:var(--zhu);color:var(--zhu)}
 .tool-btn.on{background:var(--zhu);border-color:var(--zhu);color:#fdf4dc}
+/* 目录按钮：主色实底，与普通工具按钮区分 */
+#btn-toc{background:var(--zhu);border-color:var(--zhu);color:#fdf4dc;font-weight:700;letter-spacing:.1em}
+#btn-toc:hover{color:#fff;border-color:var(--zhu)}
+body.night #btn-toc{color:#16130c}
+/* 返回阅读：主色实底、加大，第一眼可见 */
+[id^="viz-close"]{background:var(--zhu);border-color:var(--zhu);color:#fdf4dc;font-weight:700;padding:5px 14px;letter-spacing:.06em}
+[id^="viz-close"]:hover{color:#fff;border-color:var(--zhu)}
+body.night [id^="viz-close"]{color:#16130c}
+/* 阅读原文：顶栏互动按钮（靛蓝描边） */
+.orig-btn{border-color:var(--indigo);color:var(--indigo)}
+.orig-btn:hover{background:var(--indigo);border-color:var(--indigo);color:#f2e7cb}
+body.night .orig-btn:hover{color:#12100a}
 
 /* ---------- 布局 ---------- */
 #wrap{display:flex;height:calc(100vh - 78px);overflow:hidden}
@@ -618,6 +631,28 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
 }
 #mscrim.on{display:block}
 
+/* ---------- 电脑版窄窗（≤1180px，iPad 等）：助手改为右侧抽屉 ---------- */
+@media(max-width:1180px){
+  html.mode-narrow #aside{
+    display:block!important;position:fixed;right:0;top:var(--mh,52px);bottom:26px;height:auto;
+    width:min(360px,92vw);z-index:66;transform:translateX(104%);
+    transition:transform .22s ease;box-shadow:-6px 0 22px rgba(0,0,0,.12);
+    border-left:1px solid var(--line2);background:var(--paper2);overflow-y:auto;
+  }
+  html.mode-narrow.m-ai #aside{transform:none!important}
+}
+/* ---------- 电脑版更窄（≤820px）：目录也改为左侧抽屉 ---------- */
+@media(max-width:820px){
+  html.mode-narrow2 #toc{
+    display:block!important;position:fixed;left:0;top:var(--mh,52px);bottom:26px;height:auto;
+    width:min(300px,80vw);z-index:66;transform:translateX(-104%);
+    transition:transform .22s ease;box-shadow:6px 0 22px rgba(0,0,0,.12);
+    border-right:1px solid var(--line2);background:var(--paper2);overflow-y:auto;
+  }
+  html.mode-narrow2.m-side #toc{transform:none!important}
+  html.mode-narrow2 #toc-handle{display:none}
+}
+
 </style>
 </head>
 <body>
@@ -642,7 +677,7 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
   <button class="tool-btn" id="btn-theme">夜间</button>
   <button class="tool-btn" id="btn-aa">字号</button>
   <button class="tool-btn" id="btn-width">栏宽</button>
-  <button class="tool-btn" id="btn-aside">助手</button>
+  <button class="tool-btn" id="btn-aside">总结</button>
   <button class="tool-btn" id="btn-full">全屏</button>
 </header>
 
@@ -651,7 +686,7 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
   <main id="main"><div id="inner"></div></main>
   <aside id="aside">
     <div class="aside-hd">
-      <span id="aside-title">助手</span>
+      <span id="aside-title">总结</span>
       <button id="aside-close">×</button>
     </div>
     <div class="aside-body" id="aside-body"></div>
@@ -699,7 +734,7 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
       '<button class="mg-card" data-m="desktop">' +
         '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6">' +
         '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
-        '<b>电脑版</b><i>三栏常驻<br>目录 / 助手 固定在两侧</i>' +
+        '<b>电脑版</b><i>三栏常驻<br>目录 / 总结 固定在两侧</i>' +
         '<em class="mg-rec">推荐</em>' +
       '</button>' +
       '<button class="mg-card" data-m="mp">' +
@@ -726,6 +761,20 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
   }
   function syncScrim() {
     scrim.classList.toggle("on", root.classList.contains("m-side") || root.classList.contains("m-ai"));
+  }
+  /* 供应用层按钮复用：抽屉开关统一走这里，遮罩状态不会残留 */
+  window.NJDrawer = drawer;
+  window.NJCloseDrawers = closeAll;
+
+  /* 电脑版窄窗：≤1180 助手改抽屉，≤820 目录也改抽屉 */
+  function syncNarrow() {
+    if (!root.classList.contains("mode-desktop")) {
+      root.classList.remove("mode-narrow", "mode-narrow2");
+      return;
+    }
+    const w = window.innerWidth;
+    root.classList.toggle("mode-narrow", w <= 1180);
+    root.classList.toggle("mode-narrow2", w <= 820);
   }
   function syncTopbar() {
     const h = $("topbar");
@@ -754,20 +803,16 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
     }
 
     const tocBtn = $("btn-toc"), handle = $("toc-handle"), asideBtn = $("btn-aside"), asideClose = $("aside-close");
+    /* 按钮点击行为统一由应用层的 mode-aware 处理器接管（见 bindTools），
+       这里只负责类切换，避免两层 onclick 互相覆盖导致遮罩残留 */
     if (m !== "desktop") {
       document.body.classList.remove("hide-toc", "hide-aside");
-      if (tocBtn) tocBtn.onclick = () => drawer("side");
-      if (handle) handle.onclick = () => drawer("side");
-      if (asideBtn) asideBtn.onclick = () => drawer("ai");
-      if (asideClose) asideClose.onclick = () => root.classList.remove("m-ai");
     } else {
-      if (tocBtn) tocBtn.onclick = origOn.toc || (() => document.body.classList.toggle("hide-toc"));
-      if (handle) handle.onclick = origOn.handle || (() => document.body.classList.toggle("hide-toc"));
-      if (asideBtn) asideBtn.onclick = origOn.aside || (() => document.body.classList.toggle("hide-aside"));
-      if (asideClose) asideClose.onclick = origOn.asideClose || (() => document.body.classList.add("hide-aside"));
       document.body.classList.remove("hide-toc");
       document.body.classList.add("hide-aside");
     }
+    closeAll();
+    syncNarrow();
     setTimeout(syncTopbar, 40);
     window.dispatchEvent(new Event("resize"));
   }
@@ -839,8 +884,8 @@ html.mode-mobile.m-portrait #main{padding:16px 16px 56px}
       if (!gate.hidden && cur()) { gate.hidden = true; return; }
       closeAll();
     });
-    window.addEventListener("resize", syncTopbar);
-    window.addEventListener("orientationchange", function () { setTimeout(syncTopbar, 300); });
+    window.addEventListener("resize", function () { syncNarrow(); syncTopbar(); });
+    window.addEventListener("orientationchange", function () { setTimeout(function () { syncNarrow(); syncTopbar(); }, 300); });
   };
   NJModeBoot();
 })();
@@ -1960,6 +2005,7 @@ window.NJ_OLDCHARTS = {
   const state = { ch: NJ_CHAPTERS[0].id, sec: null };
 
   function openChapter(id, secId) {
+    if (window.NJCloseDrawers) window.NJCloseDrawers();   // 手机版 / 窄屏：选中章节后自动收抽屉
     state.ch = id; state.sec = secId || null;
     const c = chById.get(id);
     curBook = c.book;
@@ -2043,7 +2089,7 @@ window.NJ_OLDCHARTS = {
       }
     }
     history.replaceState(null, "", "#" + (secId ? c.id + "/" + secId : c.id));
-    setAside(defaultAside(c));
+    setAside(defaultAside(c), "总结");
     if (window.NJMarkNav) window.NJMarkNav();
   }
 
@@ -2052,13 +2098,13 @@ window.NJ_OLDCHARTS = {
       <div class="card-py">${c.book} 第${c.no}篇</div>
       <div class="card-cat" style="color:var(--gold)">本篇要旨</div>
       <div class="card-def">${hl(c.brief)}</div>
-      <div style="margin-top:16px">${tagHtml(c.tags)}</div>
-      <div class="card-link" data-act="mer">打开对应的人体经络图 →</div>
-      <div class="card-link" data-act="off">打开十二官关系图 →</div>
-      <div class="card-link" data-act="manip">打开按压手法演示器 →</div>`;
+      <div style="margin-top:16px">${tagHtml(c.tags)}</div>`;
   }
 
-  function setAside(html) { $("#aside-body").innerHTML = html; }
+  function setAside(html, title) {
+    if (title) $("#aside-title").textContent = title;
+    $("#aside-body").innerHTML = html;
+  }
 
   /* 点击术语 / 全局点击委托 */
   document.addEventListener("click", e => {
@@ -2099,7 +2145,7 @@ window.NJ_OLDCHARTS = {
     if (d.see && chById.get(d.see)) {
       html += `<div class="card-link" data-open="${d.see}">阅读《${chById.get(d.see).title}》 →</div>`;
     }
-    setAside(html);
+    setAside(html, "术语");
     $("#aside").scrollTop = 0;
   }
 
@@ -2246,6 +2292,7 @@ window.NJ_OLDCHARTS = {
         <p>十二正经 + 任督二脉　·　十四经穴位图谱</p>
         <div style="flex:1"></div>
         <div class="view-sw">
+          <button class="tool-btn orig-btn" data-open="${m.ch}">阅读《${chById.get(m.ch).title}》原文</button>
           <button class="tool-btn" id="viz-close">返回阅读</button>
         </div>
       </div>
@@ -2263,7 +2310,6 @@ window.NJ_OLDCHARTS = {
           ${dis}
           <div class="mp-h">常用腧穴</div>
           <div class="mp-t">${(m.key || []).join("　·　")}</div>
-          <div class="card-link" data-open="${m.ch}">阅读《${chById.get(m.ch).title}》原文 →</div>
         </div>
       </div>`;
 
@@ -2356,6 +2402,7 @@ window.NJ_OLDCHARTS = {
         <h2>十二官关系图</h2>
         <p>十二藏之相使 · 贵贱何如</p>
         <div style="flex:1"></div>
+        <button class="tool-btn orig-btn" data-open="sw08">阅读《灵兰秘典论》原文</button>
         <button class="tool-btn" id="viz-close">返回阅读</button>
       </div>
       <div class="viz-body">
@@ -2388,7 +2435,6 @@ window.NJ_OLDCHARTS = {
           <div class="cb-note">${NJ_CB_NOTE}</div>
           <div class="mp-h">十二官全表</div>
           <div id="off-list">${listHtml}</div>
-          <div class="card-link" data-open="sw08">阅读《灵兰秘典论》原文 →</div>
         </div>
       </div>`;
 
@@ -2415,7 +2461,7 @@ window.NJ_OLDCHARTS = {
             <button class="tool-btn" id="yq-go">推演</button>
           </div>
           <div id="yq-out" class="yq-out"></div>
-          <div class="mp-h">六十年<｜hy_place▁holder▁no▁813｜>司天在泉速查</div>
+          <div class="mp-h">六十年干支 · 司天在泉速查</div>
           <div id="yq-table" class="mp-t"
             style="font-family:var(--sans);font-size:13px;line-height:2;color:var(--ink2)"></div>
           <div class="yq-note">${NJ_YUNQI.note}</div>
@@ -2603,6 +2649,7 @@ window.NJ_OLDCHARTS = {
   /* ---------- 视图切换 ---------- */
   let inViz = false;
   function renderViz(kind) {
+    if (window.NJCloseDrawers) window.NJCloseDrawers();
     inViz = true;
     window.__vizKind = kind;
     $("#wrap").style.display = "none";
@@ -2643,6 +2690,7 @@ window.NJ_OLDCHARTS = {
   function doSearch(q) {
     q = q.trim();
     if (!q) return;
+    if (window.NJCloseDrawers) window.NJCloseDrawers();
     const res = [];
     NJ_CHAPTERS.forEach(c => {
       const hitTitle = c.title.indexOf(q) >= 0 || c.book.indexOf(q) >= 0 ||
@@ -2715,14 +2763,35 @@ window.NJ_OLDCHARTS = {
     };
     document.body.classList.add("w-mid");
 
-    $("#btn-toc").onclick = () => document.body.classList.toggle("hide-toc");
-    $("#toc-handle").onclick = () => document.body.classList.toggle("hide-toc");
-    $("#btn-aside").onclick = () => document.body.classList.toggle("hide-aside");
-    $("#btn-full").onclick = () => {
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-      else document.exitFullscreen();
+    /* 目录 / 总结：手机版与电脑版窄窗走抽屉，宽屏电脑版走显隐 */
+    const drawerMode = () =>
+      document.documentElement.classList.contains("mode-mobile") ||
+      document.documentElement.classList.contains("mode-narrow") ||
+      document.documentElement.classList.contains("mode-narrow2");
+    $("#btn-toc").onclick = () => { drawerMode() ? window.NJDrawer("side") : document.body.classList.toggle("hide-toc"); };
+    $("#toc-handle").onclick = () => { drawerMode() ? window.NJDrawer("side") : document.body.classList.toggle("hide-toc"); };
+    $("#btn-aside").onclick = () => { drawerMode() ? window.NJDrawer("ai") : document.body.classList.toggle("hide-aside"); };
+    $("#aside-close").onclick = () => { drawerMode() ? window.NJDrawer("ai", false) : document.body.classList.add("hide-aside"); };
+
+    /* 全屏：进入后按钮变为「退出全屏」，兼容 webkit 前缀（iPad Safari） */
+    const fullBtn = $("#btn-full");
+    const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+    const syncFull = () => {
+      const on = !!fsEl();
+      fullBtn.textContent = on ? "退出全屏" : "全屏";
+      fullBtn.classList.toggle("on", on);
     };
-    $("#aside-close").onclick = () => document.body.classList.add("hide-aside");
+    fullBtn.onclick = () => {
+      try {
+        if (!fsEl()) {
+          const el = document.documentElement;
+          (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+        } else {
+          (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        }
+      } catch (e) {}
+    };
+    ["fullscreenchange", "webkitfullscreenchange"].forEach(ev => document.addEventListener(ev, syncFull));
 
     // 日间 / 夜间：写 localStorage，切换后重绘当前视图以刷新 SVG 底色
     const themeBtn = $("#btn-theme");
